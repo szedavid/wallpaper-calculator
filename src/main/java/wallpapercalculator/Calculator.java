@@ -11,11 +11,12 @@ import java.util.stream.Collectors;
 
 final class Calculator {
 
-    private final static String DEFAULT_DELIMETER = "x";
+    private static final String DEFAULT_DELIMETER = "x";
 
-    private final static String DEFAULT_UNIT = "feet";
+    private static final String DEFAULT_UNIT = "feet";
 
-    private final String dataSource;
+    private static Calculator instance;
+    private final String dataSourcePath;
 
     private String delimiter = DEFAULT_DELIMETER;
 
@@ -34,16 +35,16 @@ final class Calculator {
     /**
      * Calculator Calculates required amount of wallpaper
      *
-     * @param dataSource Path to data source file
-     * @param delimiter  Delimeter of dimensions in file (default: "x")
-     * @param addExtra   Adds extra amount if true (default: true)
-     * @param unit       Unit of length (default: "feet")
+     * @param dataSourcePath Path to data source file
+     * @param delimiter      Delimeter of dimensions in file (default: "x")
+     * @param addExtra       Adds extra amount if true (default: true)
+     * @param unit           Unit of length (default: "feet")
      */
-    public Calculator(final String dataSource, final String delimiter, final Boolean addExtra, final String unit) {
-        if (dataSource != null && dataSource.length() > 0) {
-            this.dataSource = dataSource;
+    private Calculator(final String dataSourcePath, final String delimiter, final Boolean addExtra, final String unit) {
+        if (dataSourcePath != null && dataSourcePath.length() > 0) {
+            this.dataSourcePath = dataSourcePath;
         } else {
-            throw new InvalidDatasourceException("Invalid datasource path: " + dataSource);
+            throw new InvalidDatasourceException("Invalid datasource path: " + dataSourcePath);
         }
         if (delimiter != null) {
             this.delimiter = delimiter;
@@ -58,23 +59,18 @@ final class Calculator {
         calculate();
     }
 
-    public List<Room> getRooms() {
-        return rooms;
-    }
-
-    public List<Room> getCubicRooms() {
-        return cubicRooms;
-    }
-
-    public Set<Room> getIdenticalRooms() {
-        return identicalRooms;
+    public static Calculator getInstance(final String dataSourcePath, final String delimiter, final Boolean addExtra, final String unit) {
+        if (instance == null) {
+            instance = new Calculator(dataSourcePath, delimiter, addExtra, unit);
+        }
+        return instance;
     }
 
     public void calculate() {
         rooms = new ArrayList<>();
         cubicRooms = new ArrayList<>();
         identicalRooms = new HashSet<>();
-        try (FileReader fileReader = new FileReader(dataSource); BufferedReader bufferedReader = new BufferedReader(fileReader)) {
+        try (FileReader fileReader = new FileReader(dataSourcePath); BufferedReader bufferedReader = new BufferedReader(fileReader)) {
             String line;
             int lineCounter = 1;
             while ((line = bufferedReader.readLine()) != null) {
@@ -108,9 +104,9 @@ final class Calculator {
         if (areaToOrder == null) {
             calculate();
         }
-        System.out.println("Wallpaper to order: " + areaToOrder + " square " + unit);
+        System.out.println("The required amount of wallpaper: " + areaToOrder + " square " + unit);
 
-        System.out.println("\nCubic shaped rooms descending by area:");
+        System.out.println("\nCube-shaped rooms in descending order by area:");
         cubicRooms.forEach(room -> System.out.println(room.toString()));
 
         System.out.println("\nRooms that have pairs with same dimensions:");

@@ -16,7 +16,7 @@ public class WallpaperCalculator {
             return;
         }
 
-        var calculator = new Calculator(args[0], args.length > 1 ? args[1] : null, args.length > 2 ? Boolean.parseBoolean(args[2]) : null,
+        var calculator = Calculator.getInstance(args[0], args.length > 1 ? args[1] : null, args.length > 2 ? Boolean.parseBoolean(args[2]) : null,
                 args.length > 3 ? args[3] : null);
 
         calculator.printResults();

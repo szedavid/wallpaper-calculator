@@ -1,6 +1,6 @@
 package wallpapercalculator;
 
-import wallpapercalculator.exception.InvalidDatasourceException;
+import wallpapercalculator.exception.InvalidDatasourcePathException;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 final class Calculator {
-
     private static final String DEFAULT_DELIMETER = "x";
 
     private static final String DEFAULT_UNIT = "feet";
@@ -26,9 +25,9 @@ final class Calculator {
 
     private Double areaToOrder = null;
 
-    private ArrayList<Room> rooms;
+    private final List<Room> rooms;
 
-    private ArrayList<Room> cubicRooms;
+    private List<Room> cubicRooms;
 
     private Set<Room> identicalRooms;
 
@@ -40,14 +39,11 @@ final class Calculator {
      * @param addExtra       Adds extra amount if true (default: true)
      * @param unit           Unit of length (default: "feet")
      */
-    private Calculator(final String dataSourcePath, final String delimiter, final Boolean addExtra, final String unit) {
+    private Calculator(final String dataSourcePath, final Boolean addExtra, final String unit, final String delimiter) {
         if (dataSourcePath != null && dataSourcePath.length() > 0) {
             this.dataSourcePath = dataSourcePath;
         } else {
-            throw new InvalidDatasourceException("Invalid datasource path: " + dataSourcePath);
-        }
-        if (delimiter != null) {
-            this.delimiter = delimiter;
+            throw new InvalidDatasourcePathException("Invalid datasource path: " + dataSourcePath);
         }
         if (unit != null) {
             this.unit = unit;
@@ -55,21 +51,57 @@ final class Calculator {
         if (addExtra != null) {
             this.addExtra = addExtra;
         }
+        if (delimiter != null) {
+            this.delimiter = delimiter;
+        }
+
+        this.rooms = readRoomsFromDatasource();
 
         calculate();
     }
 
-    public static Calculator getInstance(final String dataSourcePath, final String delimiter, final Boolean addExtra, final String unit) {
-        if (instance == null) {
-            instance = new Calculator(dataSourcePath, delimiter, addExtra, unit);
+    public static Calculator getInstance(final String dataSourcePath, final Boolean addExtra, final String unit, final String delimiter) {
+        if (instance == null || !instance.dataSourcePath.equals(dataSourcePath) || instance.addExtra != addExtra
+                || !instance.unit.equals(unit) || !instance.delimiter.equals(delimiter)) {
+            instance = new Calculator(dataSourcePath, addExtra, unit, delimiter);
         }
         return instance;
     }
 
-    public void calculate() {
-        rooms = new ArrayList<>();
-        cubicRooms = new ArrayList<>();
-        identicalRooms = new HashSet<>();
+    public String getDataSourcePath() {
+        return dataSourcePath;
+    }
+
+    public String getDelimiter() {
+        return delimiter;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public boolean isAddExtra() {
+        return addExtra;
+    }
+
+    public Double getAreaToOrder() {
+        return areaToOrder;
+    }
+
+    public List<Room> getRooms() {
+        return rooms;
+    }
+
+    public List<Room> getCubicRooms() {
+        return cubicRooms;
+    }
+
+    public Set<Room> getIdenticalRooms() {
+        return identicalRooms;
+    }
+
+    private List<Room> readRoomsFromDatasource() {
+        var roomsTmp = new ArrayList<Room>();
         try (FileReader fileReader = new FileReader(dataSourcePath); BufferedReader bufferedReader = new BufferedReader(fileReader)) {
             String line;
             int lineCounter = 1;
@@ -77,27 +109,49 @@ final class Calculator {
                 var dimensions = Arrays.stream(line.split(this.delimiter))
                         .map(Double::valueOf)
                         .collect(Collectors.toList());
-                var room = new Room(lineCounter++, dimensions);
-                if (rooms.contains(room)) {
-                    identicalRooms.add(rooms.get(rooms.indexOf(room)));
-                    identicalRooms.add(room);
-                }
-                rooms.add(room);
+                roomsTmp.add(new Room(lineCounter++, dimensions));
             }
-
-            final AtomicReference<Double> workingArea = new AtomicReference<>((double) 0);
-            rooms.forEach(room -> {
-                workingArea.updateAndGet(v -> (v + room.getArea(this.addExtra)));
-                if (room.isCubic()) {
-                    cubicRooms.add(room);
-                }
-            });
-            cubicRooms.sort(Collections.reverseOrder());
-            areaToOrder = workingArea.get();
-
+            return roomsTmp;
         } catch (IOException e) {
             e.printStackTrace();
+            throw new InvalidDatasourcePathException(
+                    "Error while reading datasorce at path: " + dataSourcePath + "\r\n Error message: " + e.getMessage()
+            );
         }
+    }
+
+    private void calculate() {
+        areaToOrder = calculateWorkingArea(this.rooms, this.addExtra);
+        cubicRooms = collectCubicRooms(this.rooms);
+        identicalRooms = collectIdenticalRooms(this.rooms);
+    }
+
+    public static Set<Room> collectIdenticalRooms(List<Room> rooms) {
+        var identicalRoomsTmp = new HashSet<Room>();
+        rooms.forEach(room -> {
+            if (rooms.stream().filter(room::equals).count() > 1) {
+                identicalRoomsTmp.add(rooms.get(rooms.indexOf(room)));
+                identicalRoomsTmp.add(room);
+            }
+        });
+        return identicalRoomsTmp;
+    }
+
+    public static List<Room> collectCubicRooms(List<Room> rooms) {
+        var cubicRoomsTmp = new ArrayList<Room>();
+        rooms.forEach(room -> {
+            if (room.isCubic()) {
+                cubicRoomsTmp.add(room);
+            }
+        });
+        cubicRoomsTmp.sort(Collections.reverseOrder());
+        return cubicRoomsTmp;
+    }
+
+    public static Double calculateWorkingArea(List<Room> rooms, boolean addExtra) {
+        final AtomicReference<Double> areaToOrderTmp = new AtomicReference<>((double) 0);
+        rooms.forEach(room -> areaToOrderTmp.updateAndGet(v -> (v + room.getArea(addExtra))));
+        return areaToOrderTmp.get();
     }
 
     public void printResults() {

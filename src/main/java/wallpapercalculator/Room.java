@@ -3,10 +3,11 @@ package wallpapercalculator;
 import wallpapercalculator.exception.InvalidDimensionsException;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Room implements Comparable<Room> {
 
-    private final int positionInList;
+    private final int positionInDatasource;
 
     private final double length;
 
@@ -17,13 +18,13 @@ public class Room implements Comparable<Room> {
     /**
      * Room
      *
-     * @param positionInList The position in the datasource
+     * @param positionInDatasource The position in the datasource
      * @param length
      * @param width
      * @param height
      */
-    public Room(final int positionInList, final double length, final double width, final double height) {
-        this.positionInList = positionInList;
+    public Room(final int positionInDatasource, final double length, final double width, final double height) {
+        this.positionInDatasource = positionInDatasource;
         this.length = length;
         this.width = width;
         this.height = height;
@@ -32,17 +33,21 @@ public class Room implements Comparable<Room> {
     /**
      * Room
      *
-     * @param positionInList The position in the datasource
+     * @param positionInDatasource The position in the datasource
      * @param dimension
      */
-    public Room(final int positionInList, final List<Double> dimension) {
+    public Room(final int positionInDatasource, final List<Double> dimension) {
         if (dimension.size() != 3) {
             throw new InvalidDimensionsException("Invalid dimension array! Expected length: 3, received:" + dimension.size());
         }
-        this.positionInList = positionInList;
+        this.positionInDatasource = positionInDatasource;
         this.length = dimension.get(0);
         this.width = dimension.get(1);
         this.height = dimension.get(2);
+    }
+
+    public int getPositionInDatasource() {
+        return positionInDatasource;
     }
 
     public double getLength() {
@@ -79,11 +84,11 @@ public class Room implements Comparable<Room> {
 
     @Override
     public String toString() {
-        return positionInList + ". room (length=" + length + ", width=" + width + ", height=" + height + ")";
+        return positionInDatasource + ". room (length=" + length + ", width=" + width + ", height=" + height + ")";
     }
 
     /**
-     * Rooms are identical if the individual dimensions are the same
+     * Rooms are equal (identical) in practice if the individual dimensions are the same
      * (length = length, width = width, height = height)
      */
     @Override
@@ -100,4 +105,8 @@ public class Room implements Comparable<Room> {
         return length == other.length && width == other.width && height == other.height;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(positionInDatasource, width, length, height);
+    }
 }

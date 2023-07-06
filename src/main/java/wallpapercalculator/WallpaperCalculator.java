@@ -5,9 +5,9 @@ public class WallpaperCalculator {
     /**
      * @param args array elements:
      *             1.: input file path (required)
-     *             2.: calculate with extra amount (optional, default: 'true')
-     *             3.: unit of measure (optional, default: 'feet')
-     *             4.: delimeter (optional, default: 'x')
+     *             2.: calculate with extra amount (optional, default: true)
+     *             3.: unit of measure (optional, default: "feet")
+     *             4.: delimeter (optional, default: "x")
      */
     public static void main(String[] args) {
         if (args.length == 0) {
@@ -15,8 +15,8 @@ public class WallpaperCalculator {
             return;
         }
 
-        var calculator = Calculator.getInstance(args[0], args.length > 1 ? Boolean.parseBoolean(args[2]) : null,
-                args.length > 2 ? args[3] : null, args.length > 3 ? args[1] : null);
+        var calculator = new Calculator(args[0], args.length > 1 ? Boolean.parseBoolean(args[1]) : null,
+                args.length > 2 ? args[2] : null, args.length > 3 ? args[3] : null);
 
         calculator.printResults();
     }

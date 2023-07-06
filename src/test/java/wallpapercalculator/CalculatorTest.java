@@ -10,17 +10,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class CalculatorTest {
 
     @Test
+    void readDatasource() {
+        final var dataSourcePath = "src/test/resources/test-input.txt";
+        var roomsFromDatasource = new Calculator(dataSourcePath).getRooms();
+        assertEquals(10, roomsFromDatasource.size());
+    }
+
+    @Test
+    void readDatasourceWithNonDefaultDelimiter() {
+        final var dataSourcePath = "src/test/resources/test-input-comma.txt";
+        var roomsFromDatasource = new Calculator(dataSourcePath, null, null, ",").getRooms();
+        assertEquals(10, roomsFromDatasource.size());
+    }
+
+    @Test
+    void customUnit() {
+        final var dataSourcePath = "src/test/resources/test-input.txt";
+        var roomsFromDatasource = new Calculator(dataSourcePath, null, "meter", null);
+        assertEquals("10902.0 square meters", roomsFromDatasource.getWallpaperAreaAsText());
+    }
+
+    @Test
     void calculateWithoutExtra() {
         var rooms = new ArrayList<Room>();
         rooms.add(new Room(1, 2, 3, 4));
-        assertEquals(52, Calculator.calculateWorkingArea(rooms, false));
+        assertEquals(52, Calculator.calculateWallpaperArea(rooms, false));
     }
 
     @Test
     void calculateWithExtra() {
         var rooms = new ArrayList<Room>();
         rooms.add(new Room(1, 2, 3, 4));
-        assertEquals(58, Calculator.calculateWorkingArea(rooms, true)); // 52 + (2*3)
+        assertEquals(58, Calculator.calculateWallpaperArea(rooms, true)); // 52 + (2*3)
     }
 
     @Test
@@ -53,7 +74,7 @@ class CalculatorTest {
         nonCubicRooms.add(new Room(4, 1, 1, 2));
         nonCubicRooms.add(new Room(4, 2, 1, 1));
         nonCubicRooms.add(new Room(4, 1, 2, 1));
-        
+
         var rooms = new ArrayList<>(cubicRooms);
         rooms.addAll(nonCubicRooms);
 
